@@ -33,9 +33,6 @@ class TreeNode:
 
             if 0 <= new_x < 3 and 0 <= new_y < 3:
                 new_state = self.swap(x, y, new_x, new_y)
-                for row in new_state:
-                    print(row)
-                print()
                 children.append(TreeNode(new_state, self, move, self.cost + 1,self.depth + 1))
         return children
     def get_goal_path(self):
@@ -53,39 +50,75 @@ class TreeNode:
         return None
     
 #cost for the eight-puzzle will always be one, so this serves as a breadth first search
-def uniform_cost_search(start, goal_state):
+def uniform_cost_search(start, goal_state): 
     nodes_expanded = 0 
     max_queue_length = 0
     nodes = []
     visited = set()
     
-    root = TreeNode(start)
-    heapq.heappush(nodes, (0, root))  
-    visited.add(root.puzzle_state)  
+    print (f"Initial State: {start}")
+    heapq.heappush(nodes, (0, TreeNode(start)))  
+    visited.add(TreeNode(start).puzzle_state)  
 
     while nodes:
         max_queue_length = max(max_queue_length, len(nodes))
         current_cost, node = heapq.heappop(nodes)
-
+        print(f"Best State with cost: {current_cost}")
+        for row in node.puzzle_state:
+            print(row)
+        #When UCS eventually finds goal, return the terminal node that corresponds to the goal
         if node.puzzle_state == goal_state: 
+            print("Goal Reached!")
+            print(f"Nodes Expanded: {nodes_expanded}")
+            print(f"Max Queue Length: {max_queue_length}")
+            print(f"Depth: {node.depth}")
+            return node
+        #If the terminal node is not the goal, then expand
+        nodes_expanded += 1 
+        for child in node.get_children():
+            if child.puzzle_state not in visited:
+                heapq.heappush(nodes, (child.cost, child))
+                visited.add(child.puzzle_state)  
+
+    print("Failure. UCS was not able to find a solution")
+    return None
+def a_star_algorithm(start, heuristic,goal_state):
+    nodes_expanded = 0
+    max_queue_length = 0
+    nodes = []
+    visited = set()
+    
+    heapq.heappush(nodes,(0,TreeNode(start)))
+    visited.add(TreeNode(start).puzzle_state)
+
+    while nodes:
+        max_queue_length = max(max_queue_length, len(nodes))
+        current_cost, node = heapq.heappop(nodes)
+        print(f"Best state with cheapest estimated cost: {current_cost}")
+        for row in node.puzzle_state:
+            print(row)
+ 
+        if node.puzzle_state == goal_state:
             print("Goal Reached!")
             print(f"Nodes Expanded: {nodes_expanded}")
             print(f"Max Queue Length: {max_queue_length}")
             print(f"Depth: {node.depth}")
             return node.get_goal_path()
         
-        nodes_expanded += 1 
-
+        nodes_expanded += 1
         for child in node.get_children():
             if child.puzzle_state not in visited:
-                heapq.heappush(nodes, (child.cost, child)) 
-                visited.add(child.puzzle_state)  
+                h_cost = heuristic(child.puzzle_state, goal_state)
+                f_cost = child.cost + h_cost
+                heapq.heappush(nodes, (f_cost , child))
+                visited.add(child.puzzle_state)
+    print("Failure")
 
-    print("Failure. UCS was not able to find a solution")
-    return None
-
-def manhattan_distance_heuristic(current_board):
+def manhattan_distance_heuristic(current_board,goal_state):
+    goal_coordinates = [(0,2), (1,2), (2,2), (0,1),(1,1), (2,1), (0,0), (1,0), (2,0)]
+    moves = [(-1,0,"Up"),(1,0,"Down"),(0,-1,"Left"), (0,1, "Right")]
     return
+                
 def misplaced_tile_hueristic(current_board,goal_state):
     misplaced_tiles = 0
     for i in range(3):
@@ -94,8 +127,7 @@ def misplaced_tile_hueristic(current_board,goal_state):
                 misplaced_tiles += 1
     return misplaced_tiles
 
-def a_star_algorithm(board, heuristic):
-    return
+
 
 trivial_test = [[1, 2, 3],
                 [4, 5, 6],
@@ -148,11 +180,14 @@ if default_or_custom == 2:
 algorithm_prompt()
 algo_choice = int(input())
 if algo_choice == 1:
+    print("Now working on the puzzle with uniform cost search...")
     uniform_cost_search(board, goal_state)
 if algo_choice == 2:
-    print("WIP A* with misplaced tile heuristic!")
-    heuristic = misplaced_tile_hueristic(board, goal_state)
-    print(heuristic)
+    print("Now working the puzzle with A* and a misplaced tile heuristic...")
+    heuristic = misplaced_tile_hueristic
+    a_star_algorithm(board, heuristic, goal_state)
 if algo_choice == 3:
-    print ("WIP A* with manhattan distance heuristic!")
+    print ("Now working the puzzle with A* and manhattan distance heuristic...")
+    heuristic = manhattan_distance_heuristic
+    a_star_algorithm(board, heuristic, goal_state)
 #TODO implement A* algorithm and requirements
