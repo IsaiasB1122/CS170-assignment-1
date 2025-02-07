@@ -84,6 +84,19 @@ def uniform_cost_search(start, goal_state):
     print("Failure. UCS was not able to find a solution")
     return None
 
+def manhattan_distance_heuristic(current_board):
+    return
+def misplaced_tile_hueristic(current_board,goal_state):
+    misplaced_tiles = 0
+    for i in range(3):
+        for j in range(3):
+            if current_board[i][j] != 0 and current_board[i][j] != goal_state[i][j]:
+                misplaced_tiles += 1
+    return misplaced_tiles
+
+def a_star_algorithm(board, heuristic):
+    return
+
 trivial_test = [[1, 2, 3],
                 [4, 5, 6],
                 [7, 8, 0]]
@@ -138,6 +151,8 @@ if algo_choice == 1:
     uniform_cost_search(board, goal_state)
 if algo_choice == 2:
     print("WIP A* with misplaced tile heuristic!")
+    heuristic = misplaced_tile_hueristic(board, goal_state)
+    print(heuristic)
 if algo_choice == 3:
     print ("WIP A* with manhattan distance heuristic!")
 #TODO implement A* algorithm and requirements
