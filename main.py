@@ -7,6 +7,7 @@ def algorithm_prompt():
     print()
 class TreeNode:
     def __init__(self, puzzle_state, parent = None, move = None, cost = 0, depth = 0):
+        #once state is created, convert to tuple so it cannot be changed
         self.puzzle_state = tuple(tuple(row) for row in puzzle_state)
         self.parent = parent
         self.move = move
@@ -17,32 +18,32 @@ class TreeNode:
         return self.cost < other.cost
     
     def swap(self, x1,y1,x2,y2):
+        #convert tuple rows into lists to allow for modification
         new_state = [list(row) for row in self.puzzle_state]
+        #swap is now valid
         new_state[x1][y1], new_state[x2][y2] = new_state[x2][y2], new_state[x1][y1]
         
-        return tuple(tuple(row) for row in new_state) #converts new rows into tuples
+        #now, convert back to tuple and return
+        return tuple(tuple(row) for row in new_state)
 
     def get_children(self):
         children = []
         empty_pos = self.find_empty_block()
         x, y = empty_pos #empty block position (x, y)
 
-        moves = [(-1,0,"Up"),(1,0,"Down"),(0,-1,"Left"), (0,1, "Right")]
-        for dx, dy, move in moves:
+        moves = [(1,0,"Up"),(-1,0,"Down"),(0,-1,"Left"), (0,1, "Right")]
+        #generates a new legal state from the empty block
+        for dx, dy, move in moves: 
             new_x, new_y = x + dx, y + dy
 
+            #if the new position is in logical range of an 8-puzzle, expand nodes and access children
             if 0 <= new_x < 3 and 0 <= new_y < 3:
                 new_state = self.swap(x, y, new_x, new_y)
+                #cost for eight puzzle will always be one, so keep adding one cost when new children are made
                 children.append(TreeNode(new_state, self, move, self.cost + 1,self.depth + 1))
         return children
-    def get_goal_path(self):
-        path = []
-        node = self
-        while node.parent:
-            path.append(node.move)
-            node = node.parent
-        return path[::-1] #reverse order
     def find_empty_block(self): #returns the coordinates (x,y) of the zero node.
+        #iterate through the whole puzzle
         for i in range(3):
             for j in range(3):  
                 if self.puzzle_state[i][j] == 0:
@@ -54,19 +55,26 @@ def uniform_cost_search(start, goal_state):
     nodes_expanded = 0 
     max_queue_length = 0
     nodes = []
-    visited = set()
+    #visted nodes are in an unchangable structure
+    visited = set() 
     
-    print (f"Initial State: {start}")
+    #push the current cost of the root node into the nodes queue
     heapq.heappush(nodes, (0, TreeNode(start)))  
+    #add a the node's state into the visited set
     visited.add(TreeNode(start).puzzle_state)  
 
+    state = 1
     while nodes:
+        #keep updating max_queue_length under each iteration of the loop
         max_queue_length = max(max_queue_length, len(nodes))
+        #take the value of the current cost, along with the node
         current_cost, node = heapq.heappop(nodes)
-        print(f"Best State with cost: {current_cost}")
+        print(f"visited state: {state}")
+        state += 1
+        #prints all of the states pushed onto the queue
         for row in node.puzzle_state:
             print(row)
-        #When UCS eventually finds goal, return the terminal node that corresponds to the goal
+        #When UCS eventually finds goal, return the goal terminal node
         if node.puzzle_state == goal_state: 
             print("Goal Reached!")
             print(f"Nodes Expanded: {nodes_expanded}")
@@ -75,11 +83,12 @@ def uniform_cost_search(start, goal_state):
             return node
         #If the terminal node is not the goal, then expand
         nodes_expanded += 1 
+
         for child in node.get_children():
             if child.puzzle_state not in visited:
+                #push the child into the queue, along with its cost
                 heapq.heappush(nodes, (child.cost, child))
                 visited.add(child.puzzle_state)  
-
     print("Failure. UCS was not able to find a solution")
     return None
 def a_star_algorithm(start, heuristic,goal_state):
@@ -103,7 +112,7 @@ def a_star_algorithm(start, heuristic,goal_state):
             print(f"Nodes Expanded: {nodes_expanded}")
             print(f"Max Queue Length: {max_queue_length}")
             print(f"Depth: {node.depth}")
-            return node.get_goal_path()
+            return node
         
         nodes_expanded += 1
         for child in node.get_children():
@@ -112,13 +121,23 @@ def a_star_algorithm(start, heuristic,goal_state):
                 f_cost = child.cost + h_cost
                 heapq.heappush(nodes, (f_cost , child))
                 visited.add(child.puzzle_state)
-    print("Failure")
+    print("Failure. A* was not able to find a solution with given heuristic")
 
 def manhattan_distance_heuristic(current_board,goal_state):
-    goal_coordinates = [(0,2), (1,2), (2,2), (0,1),(1,1), (2,1), (0,0), (1,0), (2,0)]
-    moves = [(-1,0,"Up"),(1,0,"Down"),(0,-1,"Left"), (0,1, "Right")]
-    return
-                
+    distance = 0
+    goal_positions={1:(0,0),2:(0,1),3:(0,2),
+                    4:(1,0),5:(1,1),6:(1,2),
+                    7:(2,0),8:(2,1),0:(2,2)}
+    
+    for i in range(3):
+        for j in range(3):
+            number = current_board[i][j]
+            if number != 0:
+                goal_i, goal_j = goal_positions[number]
+                distance += abs(i - goal_i) + abs(j - goal_j)
+    return distance
+
+
 def misplaced_tile_hueristic(current_board,goal_state):
     misplaced_tiles = 0
     for i in range(3):
@@ -126,8 +145,6 @@ def misplaced_tile_hueristic(current_board,goal_state):
             if current_board[i][j] != 0 and current_board[i][j] != goal_state[i][j]:
                 misplaced_tiles += 1
     return misplaced_tiles
-
-
 
 trivial_test = [[1, 2, 3],
                 [4, 5, 6],
@@ -144,8 +161,8 @@ medium = [[0, 1, 2],
 difficult = [[8, 7, 1],
              [6, 0, 2],
              [5, 4, 3]]
-
-goal_state = tuple(tuple(row) for row in trivial_test) #convert to tuple to allow for comparison
+#store as a tuple of a tuple to follow TreeNode puzzle_state
+goal_state = tuple(tuple(row) for row in trivial_test)
 
 print(f"Hello! Please choose what you would like to: do:\n")
 print(f"[1] Select a default puzzle")
@@ -190,4 +207,3 @@ if algo_choice == 3:
     print ("Now working the puzzle with A* and manhattan distance heuristic...")
     heuristic = manhattan_distance_heuristic
     a_star_algorithm(board, heuristic, goal_state)
-#TODO implement A* algorithm and requirements
