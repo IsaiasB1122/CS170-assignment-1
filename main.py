@@ -80,7 +80,7 @@ def uniform_cost_search(start, goal_state):
             print(f"Nodes Expanded: {nodes_expanded}")
             print(f"Max Queue Length: {max_queue_length}")
             print(f"Depth: {node.depth}")
-            return node
+            return node.depth, nodes_expanded, max_queue_length
         #If the terminal node is not the goal, then expand
         nodes_expanded += 1 
 
@@ -103,9 +103,7 @@ def a_star_algorithm(start, heuristic,goal_state):
     while nodes:
         max_queue_length = max(max_queue_length, len(nodes))
         current_cost, node = heapq.heappop(nodes)
-        print(f"Best state with cheapest estimated cost: {current_cost}")
-        for row in node.puzzle_state:
-            print(row)
+
  
         if node.puzzle_state == goal_state:
             print("Goal Reached!")
@@ -118,10 +116,16 @@ def a_star_algorithm(start, heuristic,goal_state):
         for child in node.get_children():
             if child.puzzle_state not in visited:
                 h_cost = heuristic(child.puzzle_state, goal_state)
-                f_cost = child.cost + h_cost
+                g_cost = child.cost
+                f_cost = g_cost + h_cost
                 heapq.heappush(nodes, (f_cost , child))
                 visited.add(child.puzzle_state)
+        print(f"Best state with g(n) = {g_cost}")
+        print(f"Best state with h(n) = {h_cost}")
+        for row in node.puzzle_state:
+            print(row)
     print("Failure. A* was not able to find a solution with given heuristic")
+    return None
 
 def manhattan_distance_heuristic(current_board,goal_state):
     distance = 0
@@ -198,7 +202,7 @@ algorithm_prompt()
 algo_choice = int(input())
 if algo_choice == 1:
     print("Now working on the puzzle with uniform cost search...")
-    uniform_cost_search(board, goal_state)
+    depth, expanded_nodes, queue_length = uniform_cost_search(board, goal_state)
 if algo_choice == 2:
     print("Now working the puzzle with A* and a misplaced tile heuristic...")
     heuristic = misplaced_tile_hueristic
